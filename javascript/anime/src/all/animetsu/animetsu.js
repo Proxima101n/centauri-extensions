@@ -1,14 +1,11 @@
 const BASE_URL = "https://animetsu-mangayomi-extension.onrender.com";
-const API_KEY = "YOUR_API_KEY_HERE";
-
-const HEADERS = {
-  "X-API-Key": API_KEY,
-  "Content-Type": "application/json",
-};
 
 async function apiGet(path) {
   const client = new Client();
-  const res = await client.get(`${BASE_URL}${path}`, HEADERS);
+  const res = await client.get(`${BASE_URL}${path}`, {
+    "X-API-Key": "8bd98622f1cfd64ddbda439d34a96384",
+    "Content-Type": "application/json",
+  });
   const data = JSON.parse(res.body);
   if (!data.success) throw new Error(data.error?.message || "API error");
   return data.data;
