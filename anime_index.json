@@ -1,12 +1,24 @@
 [
   {
     "name": "Animetsu",
-    "lang": "all",
+    "id": 3847291650,
     "baseUrl": "https://animetsu.live",
-    "iconUrl": "https://animetsu.live/favicon.ico",
+    "lang": "all",
     "typeSource": "single",
-    "isManga": false,
+    "iconUrl": "https://www.google.com/s2/favicons?sz=256&domain=https://animetsu.live/",
+    "dateFormat": "",
+    "dateFormatLocale": "",
+    "isNsfw": false,
+    "hasCloudflare": false,
+    "sourceCodeUrl": "https://raw.githubusercontent.com/Proxima101n/centauri-extensions/main/javascript/anime/src/all/animetsu/animetsu.js",
+    "apiUrl": "",
     "version": "1.0.0",
-    "script": "https://raw.githubusercontent.com/Proxima101n/centauri-extensions/main/javascript/anime/src/all/animetsu/animetsu.js"
+    "isManga": false,
+    "itemType": 1,
+    "isFullData": false,
+    "appMinVerReq": "0.5.0",
+    "additionalParams": "",
+    "sourceCodeLanguage": 1,
+    "notes": ""
   }
 ]
