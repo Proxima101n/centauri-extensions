@@ -8,6 +8,17 @@ async function apiGet(path) {
   return data.data;
 }
 
+function formatQuality(quality) {
+  if (!quality) return "MASTER (ADAPTIVE)";
+  const q = quality.toLowerCase();
+  if (q.includes("1080")) return "1080P (FHD)";
+  if (q.includes("720")) return "720P (HD)";
+  if (q.includes("480")) return "480P (SD)";
+  if (q.includes("360")) return "360P (LOW)";
+  if (q.includes("master")) return "MASTER (ADAPTIVE)";
+  return quality.toUpperCase();
+}
+
 class DefaultExtension extends MProvider {
   getPreference(key) {
     return new SharedPreferences().get(key);
@@ -82,39 +93,56 @@ class DefaultExtension extends MProvider {
 
     let servers = this.getPreference("animetsu_servers");
     let audioTypes = this.getPreference("animetsu_audio");
+    const qualityPref = this.getPreference("animetsu_quality");
 
     if (!servers || servers.length === 0) servers = ["auto"];
     if (!audioTypes || audioTypes.length === 0) audioTypes = ["sub"];
 
+    const combinations = [];
+    for (const server of servers) {
+      for (const audioType of audioTypes) {
+        combinations.push({ server, audioType });
+      }
+    }
+
+    const results = await Promise.all(
+      combinations.map(({ server, audioType }) =>
+        apiGet(`/api/anime/${id}/watch/${ep}?server=${server}&source_type=${audioType}`)
+          .then(data => ({ data, audioType }))
+          .catch(() => null)
+      )
+    );
+
     const allStreams = [];
     const seenUrls = new Set();
 
-    for (const server of servers) {
-      for (const audioType of audioTypes) {
-        try {
-          const data = await apiGet(
-            `/api/anime/${id}/watch/${ep}?server=${server}&source_type=${audioType}`
-          );
-          const sources = Array.isArray(data.sources) ? data.sources : [];
-          const subtitles = Array.isArray(data.subtitles)
-            ? data.subtitles.map((s) => ({ file: s.url, label: s.label || s.lang }))
-            : [];
+    for (const result of results) {
+      if (!result) continue;
+      const { data, audioType } = result;
+      const sources = Array.isArray(data.sources) ? data.sources : [];
+      const subtitles = Array.isArray(data.subtitles)
+        ? data.subtitles.map((s) => ({ file: s.url, label: s.label || s.lang }))
+        : [];
 
-          sources.forEach((s, i) => {
-            const dedupeKey = s.url;
-            if (seenUrls.has(dedupeKey)) return;
-            seenUrls.add(dedupeKey);
-            allStreams.push({
-              url: s.proxy_url || s.url,
-              originalUrl: s.url,
-              quality: `${s.quality || "Auto"} - ${data.server.toUpperCase()} - ${audioType.toUpperCase()}`,
-              subtitles: i === 0 ? subtitles : [],
-            });
-          });
-        } catch {
-          // skip
-        }
-      }
+      sources.forEach((s, i) => {
+        const dedupeKey = s.url;
+        if (seenUrls.has(dedupeKey)) return;
+        seenUrls.add(dedupeKey);
+        allStreams.push({
+          url: s.proxy_url || s.url,
+          originalUrl: s.url,
+          quality: `${formatQuality(s.quality)} - ${data.server.toUpperCase()} - ${audioType.toUpperCase()}`,
+          subtitles: i === 0 ? subtitles : [],
+        });
+      });
+    }
+
+    if (qualityPref && qualityPref !== "auto") {
+      const filtered = allStreams.filter(s =>
+        s.quality.toLowerCase().includes(qualityPref) ||
+        s.quality.toLowerCase().includes("adaptive")
+      );
+      return filtered.length > 0 ? filtered : allStreams;
     }
 
     return allStreams;
@@ -150,9 +178,9 @@ class DefaultExtension extends MProvider {
         key: "animetsu_quality",
         listPreference: {
           title: "Preferred quality",
-          summary: "Stream quality to prioritize",
+          summary: "Filter streams by quality",
           valueIndex: 0,
-          entries: ["Auto", "1080p", "720p", "480p", "360p"],
+          entries: ["All", "FHD (1080p)", "HD (720p)", "SD (480p)", "Low (360p)"],
           entryValues: ["auto", "1080", "720", "480", "360"],
         },
       },
