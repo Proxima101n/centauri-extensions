@@ -9,6 +9,10 @@ async function apiGet(path) {
 }
 
 class DefaultExtension extends MProvider {
+  getPreference(key) {
+    return new SharedPreferences().get(key);
+  }
+
   async searchAnime({ query = "", sort = "popularity", status = "", page = 1 }) {
     let slug = `/api/search?sort=${sort}&page=${page}&per_page=20`;
     if (query.length > 0) slug += `&q=${encodeURIComponent(query)}`;
@@ -75,31 +79,51 @@ class DefaultExtension extends MProvider {
 
   async getVideoList(url) {
     const [id, ep] = url.split("/");
-    let data;
-    try {
-      data = await apiGet(
-        `/api/anime/${id}/watch/${ep}?server=auto&source_type=sub&fallback=true`
-      );
-    } catch {
-      data = await apiGet(
-        `/api/anime/${id}/watch/${ep}?server=auto&source_type=dub&fallback=true`
-      );
+
+    let servers = this.getPreference("animetsu_servers");
+    let audioTypes = this.getPreference("animetsu_audio");
+    const qualityPref = this.getPreference("animetsu_quality");
+
+    if (!servers || servers.length === 0) servers = ["auto"];
+    if (!audioTypes || audioTypes.length === 0) audioTypes = ["sub"];
+
+    const allStreams = [];
+
+    for (const server of servers) {
+      for (const audioType of audioTypes) {
+        try {
+          const data = await apiGet(
+            `/api/anime/${id}/watch/${ep}?server=${server}&source_type=${audioType}`
+          );
+          const sources = Array.isArray(data.sources) ? data.sources : [];
+          const subtitles = Array.isArray(data.subtitles)
+            ? data.subtitles.map((s) => ({ file: s.url, label: s.label || s.lang }))
+            : [];
+
+          sources.forEach((s, i) => {
+            allStreams.push({
+              url: s.proxy_url || s.url,
+              originalUrl: s.url,
+              quality: `${s.quality || "Auto"} - ${data.server?.toUpperCase() || server.toUpperCase()} - ${audioType.toUpperCase()}`,
+              subtitles: i === 0 ? subtitles : [],
+            });
+          });
+        } catch {
+          // server/audio combo not available, skip
+        }
+      }
     }
 
-    const sources = Array.isArray(data.sources) ? data.sources : [];
-    const subtitles = Array.isArray(data.subtitles)
-      ? data.subtitles.map((s) => ({
-          file: s.url,
-          label: s.label || s.lang,
-        }))
-      : [];
+    // sort preferred quality to top
+    if (qualityPref && qualityPref !== "auto") {
+      allStreams.sort((a, b) => {
+        const aMatch = a.quality.toLowerCase().includes(qualityPref) ? -1 : 1;
+        const bMatch = b.quality.toLowerCase().includes(qualityPref) ? -1 : 1;
+        return aMatch - bMatch;
+      });
+    }
 
-    return sources.map((s, i) => ({
-      url: s.proxy_url || s.url,
-      originalUrl: s.url,
-      quality: `${s.quality || "Auto"} - ${data.server?.toUpperCase() || "AUTO"} - ${data.source_type?.toUpperCase() || "SUB"}`,
-      subtitles: i === 0 ? subtitles : [],
-    }));
+    return allStreams;
   }
 
   getFilterList() {
@@ -107,7 +131,38 @@ class DefaultExtension extends MProvider {
   }
 
   getSourcePreferences() {
-    return [];
+    return [
+      {
+        key: "animetsu_servers",
+        multiSelectListPreference: {
+          title: "Preferred servers",
+          summary: "Choose which servers to fetch streams from",
+          values: ["auto"],
+          entries: ["Auto", "Pahe", "Kite", "Meg", "Dio", "Kiss"],
+          entryValues: ["auto", "pahe", "kite", "meg", "dio", "kiss"],
+        },
+      },
+      {
+        key: "animetsu_audio",
+        multiSelectListPreference: {
+          title: "Sub / Dub",
+          summary: "Choose sub, dub, or both",
+          values: ["sub"],
+          entries: ["Sub", "Dub"],
+          entryValues: ["sub", "dub"],
+        },
+      },
+      {
+        key: "animetsu_quality",
+        listPreference: {
+          title: "Preferred quality",
+          summary: "Stream quality to prioritize",
+          valueIndex: 0,
+          entries: ["Auto", "1080p", "720p", "480p", "360p"],
+          entryValues: ["auto", "1080", "720", "480", "360"],
+        },
+      },
+    ];
   }
 }
 
