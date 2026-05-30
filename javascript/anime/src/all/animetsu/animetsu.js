@@ -50,6 +50,8 @@ class DefaultExtension extends MProvider {
     const statusMap = {
       RELEASING: 0,
       FINISHED: 1,
+      HIATUS: 2,
+      CANCELLED: 3,
       NOT_YET_RELEASED: 4,
     };
 
@@ -83,11 +85,20 @@ class DefaultExtension extends MProvider {
         `/api/anime/${id}/watch/${ep}?server=auto&source_type=dub&fallback=true`
       );
     }
+
     const sources = Array.isArray(data.sources) ? data.sources : [];
-    return sources.map((s) => ({
+    const subtitles = Array.isArray(data.subtitles)
+      ? data.subtitles.map((s) => ({
+          file: s.url,
+          label: s.label || s.lang,
+        }))
+      : [];
+
+    return sources.map((s, i) => ({
       url: s.proxy_url || s.url,
       originalUrl: s.url,
-      quality: s.quality || "Auto",
+      quality: `${s.quality || "Auto"} - ${data.server?.toUpperCase() || "AUTO"} - ${data.source_type?.toUpperCase() || "SUB"}`,
+      subtitles: i === 0 ? subtitles : [],
     }));
   }
 
