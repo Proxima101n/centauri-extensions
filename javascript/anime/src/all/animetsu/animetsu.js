@@ -8,39 +8,33 @@ async function apiGet(path) {
   return data.data;
 }
 
+function mapAnime(a) {
+  return {
+    name: a.title?.english || a.title?.romaji || a.title || "",
+    url: String(a.id),
+    imageUrl: a.cover_image?.large || a.coverImage?.large || a.image || "",
+  };
+}
+
 class DefaultExtension extends MProvider {
   async getPopular(page) {
     const data = await apiGet(`/api/popular`);
-    const list = (Array.isArray(data) ? data : data.media || []).map((a) => ({
-      name: a.title?.english || a.title?.romaji || a.title || "",
-      url: String(a.id),
-      imageUrl: a.coverImage?.large || a.image || "",
-    }));
-    return { list, hasNextPage: false };
+    const items = Array.isArray(data) ? data : data.results || data.media || [];
+    return { list: items.map(mapAnime), hasNextPage: false };
   }
 
   async getLatest(page) {
     const data = await apiGet(`/api/recent?page=${page}&per_page=20`);
-    const items = Array.isArray(data) ? data : data.media || [];
-    const list = items.map((a) => ({
-      name: a.title?.english || a.title?.romaji || a.title || "",
-      url: String(a.id),
-      imageUrl: a.coverImage?.large || a.image || "",
-    }));
-    return { list, hasNextPage: list.length === 20 };
+    const items = Array.isArray(data) ? data : data.results || data.media || [];
+    return { list: items.map(mapAnime), hasNextPage: items.length === 20 };
   }
 
   async search(query, page, filters) {
     const data = await apiGet(
       `/api/search?q=${encodeURIComponent(query)}&page=${page}`
     );
-    const items = Array.isArray(data) ? data : data.media || [];
-    const list = items.map((a) => ({
-      name: a.title?.english || a.title?.romaji || a.title || "",
-      url: String(a.id),
-      imageUrl: a.coverImage?.large || a.image || "",
-    }));
-    return { list, hasNextPage: list.length >= 20 };
+    const items = Array.isArray(data) ? data : data.results || data.media || [];
+    return { list: items.map(mapAnime), hasNextPage: items.length >= 20 };
   }
 
   async getDetail(url) {
@@ -50,7 +44,7 @@ class DefaultExtension extends MProvider {
       apiGet(`/api/anime/${id}/episodes`),
     ]);
 
-    const episodes = (Array.isArray(episodesData) ? episodesData : []).map(
+    const episodes = (Array.isArray(episodesData) ? episodesData : episodesData.results || []).map(
       (ep) => ({
         name: ep.title ? `Ep ${ep.number}: ${ep.title}` : `Episode ${ep.number}`,
         url: `${id}||${ep.number}`,
@@ -68,7 +62,7 @@ class DefaultExtension extends MProvider {
 
     return {
       name: anime.title?.english || anime.title?.romaji || "",
-      imageUrl: anime.coverImage?.large || anime.image || "",
+      imageUrl: anime.cover_image?.large || anime.coverImage?.large || anime.image || "",
       description: anime.description || "",
       genre: anime.genres || [],
       status: statusMap[anime.status] ?? 5,
