@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Animetsu",
+    "lang": "all",
+    "baseUrl": "https://animetsu.live",
+    "iconUrl": "https://animetsu.live/favicon.ico",
+    "typeSource": "single",
+    "isManga": false,
+    "version": "1.0.0",
+    "script": "https://raw.githubusercontent.com/Proxima101/centauri-extensions/main/javascript/anime/src/all/animetsu/animetsu.js"
+  }
+]
