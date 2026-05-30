@@ -72,10 +72,17 @@ class DefaultExtension extends MProvider {
   }
 
   async getVideoList(url) {
-    const data = await apiGet(
-      `/api/anime/${url}?server=auto&source_type=sub&fallback=true`
-    );
-
+    const [id, ep] = url.split("/");
+    let data;
+    try {
+      data = await apiGet(
+        `/api/anime/${id}/watch/${ep}?server=auto&source_type=sub&fallback=true`
+      );
+    } catch {
+      data = await apiGet(
+        `/api/anime/${id}/watch/${ep}?server=auto&source_type=dub&fallback=true`
+      );
+    }
     const sources = Array.isArray(data.sources) ? data.sources : [];
     return sources.map((s) => ({
       url: s.proxy_url || s.url,
