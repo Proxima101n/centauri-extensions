@@ -139,8 +139,7 @@ class DefaultExtension extends MProvider {
 
     if (qualityPref && qualityPref !== "auto") {
       const filtered = allStreams.filter(s =>
-        s.quality.toLowerCase().includes(qualityPref) ||
-        s.quality.toLowerCase().includes("adaptive")
+        s.quality.toLowerCase().includes(qualityPref)
       );
       return filtered.length > 0 ? filtered : allStreams;
     }
