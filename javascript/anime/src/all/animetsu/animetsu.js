@@ -82,12 +82,12 @@ class DefaultExtension extends MProvider {
 
     let servers = this.getPreference("animetsu_servers");
     let audioTypes = this.getPreference("animetsu_audio");
-    const qualityPref = this.getPreference("animetsu_quality");
 
     if (!servers || servers.length === 0) servers = ["auto"];
     if (!audioTypes || audioTypes.length === 0) audioTypes = ["sub"];
 
     const allStreams = [];
+    const seenUrls = new Set();
 
     for (const server of servers) {
       for (const audioType of audioTypes) {
@@ -101,26 +101,20 @@ class DefaultExtension extends MProvider {
             : [];
 
           sources.forEach((s, i) => {
+            const dedupeKey = s.url;
+            if (seenUrls.has(dedupeKey)) return;
+            seenUrls.add(dedupeKey);
             allStreams.push({
               url: s.proxy_url || s.url,
               originalUrl: s.url,
-              quality: `${s.quality || "Auto"} - ${data.server?.toUpperCase() || server.toUpperCase()} - ${audioType.toUpperCase()}`,
+              quality: `${s.quality || "Auto"} - ${data.server.toUpperCase()} - ${audioType.toUpperCase()}`,
               subtitles: i === 0 ? subtitles : [],
             });
           });
         } catch {
-          // server/audio combo not available, skip
+          // skip
         }
       }
-    }
-
-    // sort preferred quality to top
-    if (qualityPref && qualityPref !== "auto") {
-      allStreams.sort((a, b) => {
-        const aMatch = a.quality.toLowerCase().includes(qualityPref) ? -1 : 1;
-        const bMatch = b.quality.toLowerCase().includes(qualityPref) ? -1 : 1;
-        return aMatch - bMatch;
-      });
     }
 
     return allStreams;
