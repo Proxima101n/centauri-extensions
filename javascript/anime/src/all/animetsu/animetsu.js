@@ -9,13 +9,13 @@ async function apiGet(path) {
 }
 
 function formatQuality(quality) {
-  if (!quality) return "MASTER (ADAPTIVE)";
+  if (!quality) return "AUTO";
   const q = quality.toLowerCase();
-  if (q.includes("1080")) return "1080P (FHD)";
-  if (q.includes("720")) return "720P (HD)";
-  if (q.includes("480")) return "480P (SD)";
-  if (q.includes("360")) return "360P (LOW)";
-  if (q.includes("master")) return "MASTER (ADAPTIVE)";
+  if (q.includes("1080")) return "1080P [FHD]";
+  if (q.includes("720")) return "720P [HD]";
+  if (q.includes("480")) return "480P [SD]";
+  if (q.includes("360")) return "360P [LOW]";
+  if (q.includes("master")) return "AUTO";
   return quality.toUpperCase();
 }
 
