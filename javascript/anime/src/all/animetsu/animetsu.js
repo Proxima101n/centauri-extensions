@@ -137,7 +137,7 @@ class DefaultExtension extends MProvider {
       });
     }
 
-    if (qualityPref && qualityPref !== "auto") {
+    if (qualityPref && qualityPref !== "all") {
       const filtered = allStreams.filter(s =>
         s.quality.toLowerCase().includes(qualityPref)
       );
@@ -179,8 +179,8 @@ class DefaultExtension extends MProvider {
           title: "Preferred quality",
           summary: "Filter streams by quality",
           valueIndex: 0,
-          entries: ["All", "FHD (1080p)", "HD (720p)", "SD (480p)", "Low (360p)"],
-          entryValues: ["auto", "1080", "720", "480", "360"],
+          entries: ["All", "Auto", "FHD (1080p)", "HD (720p)", "SD (480p)", "Low (360p)"],
+          entryValues: ["all", "auto", "1080", "720", "480", "360"],
         },
       },
     ];
