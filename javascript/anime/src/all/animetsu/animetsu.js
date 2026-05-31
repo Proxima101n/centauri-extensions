@@ -93,10 +93,11 @@ class DefaultExtension extends MProvider {
 
     let servers = this.getPreference("animetsu_servers");
     let audioTypes = this.getPreference("animetsu_audio");
-    const qualityPref = this.getPreference("animetsu_quality");
+    let qualityPrefs = this.getPreference("animetsu_quality");
 
     if (!servers || servers.length === 0) servers = ["auto"];
     if (!audioTypes || audioTypes.length === 0) audioTypes = ["sub"];
+    if (!qualityPrefs || qualityPrefs.length === 0) qualityPrefs = [];
 
     const combinations = [];
     for (const server of servers) {
@@ -137,9 +138,9 @@ class DefaultExtension extends MProvider {
       });
     }
 
-    if (qualityPref && qualityPref !== "all") {
+    if (qualityPrefs.length > 0) {
       const filtered = allStreams.filter(s =>
-        s.quality.toLowerCase().includes(qualityPref)
+        qualityPrefs.some(q => s.quality.toLowerCase().includes(q))
       );
       return filtered.length > 0 ? filtered : allStreams;
     }
@@ -175,12 +176,12 @@ class DefaultExtension extends MProvider {
       },
       {
         key: "animetsu_quality",
-        listPreference: {
+        multiSelectListPreference: {
           title: "Preferred quality",
-          summary: "Filter streams by quality",
-          valueIndex: 0,
-          entries: ["All", "Auto", "FHD (1080p)", "HD (720p)", "SD (480p)", "Low (360p)"],
-          entryValues: ["all", "auto", "1080", "720", "480", "360"],
+          summary: "Filter streams by quality, leave empty to show all",
+          values: [],
+          entries: ["Auto", "FHD (1080p)", "HD (720p)", "SD (480p)", "Low (360p)"],
+          entryValues: ["auto", "1080", "720", "480", "360"],
         },
       },
     ];
